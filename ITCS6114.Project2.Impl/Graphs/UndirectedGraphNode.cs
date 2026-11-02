@@ -6,7 +6,7 @@ namespace ITCS6114.Project2.Impl.Graphs;
 /// <summary>
 /// A node in an undirected graph.
 /// </summary>
-public class UndirectedGraphNode<TData, TCost> : IReadOnlyCollection<UndirectedGraphEdge<TData, TCost>>
+public class UndirectedGraphNode<TData, TCost> : IReadOnlyCollection<UndirectedGraphEdge<TData, TCost>>, IGraphNode<TData>
     where TCost : INumber<TCost>
 {
 #nullable disable
@@ -21,7 +21,12 @@ public class UndirectedGraphNode<TData, TCost> : IReadOnlyCollection<UndirectedG
     /// <summary>
     /// Generic value stored in this node.
     /// </summary>
-    public TData Value;
+    public readonly TData Value;
+
+    /// <summary>
+    /// Integer data that can be used for mapping to an array for storing algorithmic data.
+    /// </summary>
+    public int UserIndex { get; set; }
 
     /// <summary>
     /// Number of connections on this node. Self-loops count as <c>2</c>.
@@ -36,14 +41,29 @@ public class UndirectedGraphNode<TData, TCost> : IReadOnlyCollection<UndirectedG
 
     internal UndirectedGraphEdge<TData, TCost>? FindPath(UndirectedGraphNode<TData, TCost> otherNode)
     {
-        for (
-            UndirectedGraphEdge<TData, TCost>? connection = _paths;
-            connection != null;
-            connection = this == connection.A ? connection.ANext : connection.BNext
-        )
+        if (otherNode == this)
         {
-            if (connection.A == otherNode || connection.B == otherNode)
-                return connection;
+            for (
+                UndirectedGraphEdge<TData, TCost>? connection = _paths;
+                connection != null;
+                connection = this == connection.A ? connection.ANext : connection.BNext
+            )
+            {
+                if (connection.A == otherNode && connection.B == otherNode)
+                    return connection;
+            }
+        }
+        else
+        {
+            for (
+                UndirectedGraphEdge<TData, TCost>? connection = _paths;
+                connection != null;
+                connection = this == connection.A ? connection.ANext : connection.BNext
+            )
+            {
+                if (connection.A == otherNode || connection.B == otherNode)
+                    return connection;
+            }
         }
 
         return null;
@@ -230,9 +250,11 @@ public class UndirectedGraphNode<TData, TCost> : IReadOnlyCollection<UndirectedG
     }
 
     public override string ToString() => Value?.ToString() ?? string.Empty;
+    public override int GetHashCode() => Value?.GetHashCode() ?? 0;
 
     IEnumerator<UndirectedGraphEdge<TData, TCost>> IEnumerable<UndirectedGraphEdge<TData, TCost>>.GetEnumerator() => GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    TData IGraphNode<TData>.Value => Value;
 
     /// <summary>
     /// Enumerates through the outgoing connections on a <see cref="DigraphNode{TData,TCost}"/>

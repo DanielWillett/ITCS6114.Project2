@@ -5,7 +5,7 @@ namespace ITCS6114.Project2.Impl.Graphs;
 /// <summary>
 /// A connection between two nodes on an undirected graph.
 /// </summary>
-public sealed class UndirectedGraphEdge<TData, TCost>
+public sealed class UndirectedGraphEdge<TData, TCost> : IGraphEdge<TCost>
     where TCost : INumber<TCost>
 {
     internal UndirectedGraphEdge<TData, TCost>? ANext;
@@ -13,7 +13,19 @@ public sealed class UndirectedGraphEdge<TData, TCost>
     internal UndirectedGraphEdge<TData, TCost>? BNext;
     internal UndirectedGraphEdge<TData, TCost>? BPrev;
 
-    internal bool IsRemoved;
+    internal int Flags;
+
+    internal bool IsRemoved
+    {
+        get => (Flags & 1) != 0;
+        set => Flags = value ? Flags | 1 : Flags & ~1;
+    }
+
+    internal int UserIndex
+    {
+        get => Flags >>> 1;
+        set => Flags = (Flags & 1) | (value << 1);
+    }
 
     /// <summary>
     /// One of the two nodes forming this connection.
@@ -70,4 +82,6 @@ public sealed class UndirectedGraphEdge<TData, TCost>
     }
 
     public override string ToString() => $"{A} <==> {B}";
+
+    TCost IGraphEdge<TCost>.Cost => Cost;
 }

@@ -24,7 +24,7 @@ public class GraphFileFormatTests
             """
         );
 
-        IGraph readGraph = GraphFileFormat.ReadGraph(reader, out char sourceNode);
+        IGraph readGraph = GraphFileFormat.ReadGraph<char, int>(reader, out char sourceNode);
 
         if (readGraph is not UndirectedGraph<char, int> graph)
         {
@@ -76,7 +76,7 @@ public class GraphFileFormatTests
 
         StringWriter writer = new StringWriter();
 
-        GraphFileFormat.WriteGraph(graph, writer, sourceNode);
+        GraphFileFormat.WriteGraph(graph, writer, graph[sourceNode]);
 
         Console.WriteLine(writer.ToString());
     }
@@ -101,7 +101,7 @@ public class GraphFileFormatTests
             """
         );
 
-        IGraph readGraph = GraphFileFormat.ReadGraph(reader, out char sourceNode);
+        IGraph readGraph = GraphFileFormat.ReadGraph<char, int>(reader, out char sourceNode);
 
         if (readGraph is not Digraph<char, int> graph)
         {
@@ -153,7 +153,164 @@ public class GraphFileFormatTests
 
         StringWriter writer = new StringWriter();
 
-        GraphFileFormat.WriteGraph(graph, writer, sourceNode);
+        GraphFileFormat.WriteGraph(graph, writer, graph[sourceNode]);
+
+        Console.WriteLine(writer.ToString());
+    }
+
+    [Test]
+    public async Task ReadUndirectedGraphLessStrict()
+    {
+        using StringReader reader = new StringReader(
+            """
+            A
+            B
+            F
+            C F 6
+            D
+            E
+            A B 3
+            A
+            C D 5
+            D A
+            A F 9
+            F E
+            A C 1
+            A A 4
+            G
+            B
+            """
+        );
+
+        IGraph readGraph = GraphFileFormat.ReadGraph<char, int>(reader, out char sourceNode, GraphFileFormat.ReadMode.Undirected);
+
+        if (readGraph is not UndirectedGraph<char, int> graph)
+        {
+            Assert.Fail("Not undirected graph.");
+            return;
+        }
+
+        await Assert.That(sourceNode).IsEqualTo('B');
+
+        await Assert.That(graph.NodeCount).IsEqualTo(7);
+        await Assert.That(graph.EdgeCount).IsEqualTo(8);
+
+        UndirectedGraphNode<char, int> a = graph['A'];
+        UndirectedGraphNode<char, int> b = graph['B'];
+        UndirectedGraphNode<char, int> c = graph['C'];
+        UndirectedGraphNode<char, int> d = graph['D'];
+        UndirectedGraphNode<char, int> e = graph['E'];
+        UndirectedGraphNode<char, int> f = graph['F'];
+        UndirectedGraphNode<char, int> g = graph['G'];
+
+        await Assert.That(graph.FindPath(c, f)).IsNotNull();
+        await Assert.That(graph.FindPath(c, f)!.Cost).IsEqualTo(6);
+
+        await Assert.That(graph.FindPath(a, b)).IsNotNull();
+        await Assert.That(graph.FindPath(a, b)!.Cost).IsEqualTo(3);
+
+        await Assert.That(graph.FindPath(c, d)).IsNotNull();
+        await Assert.That(graph.FindPath(c, d)!.Cost).IsEqualTo(5);
+
+        await Assert.That(graph.FindPath(d, a)).IsNotNull();
+        await Assert.That(graph.FindPath(d, a)!.Cost).IsEqualTo(1);
+
+        await Assert.That(graph.FindPath(a, f)).IsNotNull();
+        await Assert.That(graph.FindPath(a, f)!.Cost).IsEqualTo(9);
+
+        await Assert.That(graph.FindPath(f, e)).IsNotNull();
+        await Assert.That(graph.FindPath(f, e)!.Cost).IsEqualTo(1);
+
+        await Assert.That(graph.FindPath(a, c)).IsNotNull();
+        await Assert.That(graph.FindPath(a, c)!.Cost).IsEqualTo(1);
+
+        await Assert.That(graph.FindPath(a, a)).IsNotNull();
+        await Assert.That(graph.FindPath(a, a)!.Cost).IsEqualTo(4);
+
+        await Assert.That(g.Count).IsZero();
+
+        StringWriter writer = new StringWriter();
+
+        GraphFileFormat.WriteGraph(graph, writer, graph[sourceNode]);
+
+        Console.WriteLine(writer.ToString());
+    }
+
+    [Test]
+    public async Task ReadDigraphLessStrict()
+    {
+        using StringReader reader = new StringReader(
+            """
+            A
+            B
+            F
+            C F 6
+            D
+            E
+            A B 3
+            A
+            C D 5
+            D A
+            A F 9
+            F E
+            A C 1
+            A A 4
+            G
+            B
+            """
+        );
+
+        IGraph readGraph = GraphFileFormat.ReadGraph<char, int>(reader, out char sourceNode, GraphFileFormat.ReadMode.Directed);
+
+        if (readGraph is not Digraph<char, int> graph)
+        {
+            Assert.Fail("Not undirected graph.");
+            return;
+        }
+
+        await Assert.That(sourceNode).IsEqualTo('B');
+
+        await Assert.That(graph.NodeCount).IsEqualTo(7);
+        await Assert.That(graph.EdgeCount).IsEqualTo(8);
+
+        DigraphNode<char, int> a = graph['A'];
+        DigraphNode<char, int> b = graph['B'];
+        DigraphNode<char, int> c = graph['C'];
+        DigraphNode<char, int> d = graph['D'];
+        DigraphNode<char, int> e = graph['E'];
+        DigraphNode<char, int> f = graph['F'];
+        DigraphNode<char, int> g = graph['G'];
+
+        await Assert.That(c.FindPathTo(f)).IsNotNull();
+        await Assert.That(c.FindPathTo(f)!.Cost).IsEqualTo(6);
+
+        await Assert.That(a.FindPathTo(b)).IsNotNull();
+        await Assert.That(a.FindPathTo(b)!.Cost).IsEqualTo(3);
+
+        await Assert.That(c.FindPathTo(d)).IsNotNull();
+        await Assert.That(c.FindPathTo(d)!.Cost).IsEqualTo(5);
+
+        await Assert.That(d.FindPathTo(a)).IsNotNull();
+        await Assert.That(d.FindPathTo(a)!.Cost).IsEqualTo(1);
+
+        await Assert.That(a.FindPathTo(f)).IsNotNull();
+        await Assert.That(a.FindPathTo(f)!.Cost).IsEqualTo(9);
+
+        await Assert.That(f.FindPathTo(e)).IsNotNull();
+        await Assert.That(f.FindPathTo(e)!.Cost).IsEqualTo(1);
+
+        await Assert.That(a.FindPathTo(c)).IsNotNull();
+        await Assert.That(a.FindPathTo(c)!.Cost).IsEqualTo(1);
+
+        await Assert.That(a.FindPathTo(a)).IsNotNull();
+        await Assert.That(a.FindPathTo(a)!.Cost).IsEqualTo(4);
+
+        await Assert.That(g.InCount).IsZero();
+        await Assert.That(g.OutCount).IsZero();
+
+        StringWriter writer = new StringWriter();
+
+        GraphFileFormat.WriteGraph(graph, writer, graph[sourceNode]);
 
         Console.WriteLine(writer.ToString());
     }

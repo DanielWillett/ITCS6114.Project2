@@ -5,7 +5,7 @@ namespace ITCS6114.Project2.Impl.Graphs;
 /// <summary>
 /// A connection between two nodes on a directed graph.
 /// </summary>
-public sealed class DigraphEdge<TData, TCost>
+public sealed class DigraphEdge<TData, TCost> : IGraphEdge<TCost>
     where TCost : INumber<TCost>
 {
     internal DigraphEdge<TData, TCost>? FromNext;
@@ -51,4 +51,6 @@ public sealed class DigraphEdge<TData, TCost>
     }
 
     public override string ToString() => $"{From} ==> {To}";
+
+    TCost IGraphEdge<TCost>.Cost => Cost;
 }
