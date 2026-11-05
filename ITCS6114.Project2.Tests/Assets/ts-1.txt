@@ -1,0 +1,15 @@
+﻿6 8 D
+u
+v
+w
+x
+y
+z
+u v
+u x
+x v
+y x
+v y
+w y
+w z
+z z

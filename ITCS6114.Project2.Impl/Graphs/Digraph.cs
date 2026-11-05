@@ -30,6 +30,12 @@ public class Digraph<TData, TCost> : IReadOnlyCollection<DigraphNode<TData, TCos
     /// </summary>
     public int EdgeCount { get; internal set; }
 
+    /// <summary>
+    /// Get the node at the given index.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException"/>
+    public DigraphNode<TData, TCost> this[int index] => _nodes[index];
+
     public Digraph(int capacity = 0)
     {
         _comparer = Comparer<TData>.Default;

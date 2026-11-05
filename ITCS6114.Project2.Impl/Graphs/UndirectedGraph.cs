@@ -29,6 +29,12 @@ public class UndirectedGraph<TData, TCost> : IReadOnlyCollection<UndirectedGraph
     /// </summary>
     public int EdgeCount { get; internal set; }
 
+    /// <summary>
+    /// Get the node at the given index.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException"/>
+    public UndirectedGraphNode<TData, TCost> this[int index] => _nodes[index];
+
     public UndirectedGraph(int capacity = 0)
     {
         _nodes = new List<UndirectedGraphNode<TData, TCost>>(capacity);

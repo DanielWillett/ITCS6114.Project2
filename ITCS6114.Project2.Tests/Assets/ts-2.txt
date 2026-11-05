@@ -1,0 +1,22 @@
+﻿14 21 D
+m x
+m q
+m r
+n q
+n u
+n o
+p o
+p s
+p z
+w z
+v w
+s r
+o s
+o v
+o r
+r y
+r u
+u t
+v x
+y v
+q t

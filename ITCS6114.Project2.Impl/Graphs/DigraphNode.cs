@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System.Buffers;
+using System.Collections;
 using System.Numerics;
 
 namespace ITCS6114.Project2.Impl.Graphs;
@@ -380,6 +381,65 @@ public class DigraphNode<TData, TCost> : IReadOnlyCollection<DigraphEdge<TData, 
     {
         AssertAttached();
         return new ConnectionEnumerator(_in, isIn: true);
+    }
+
+    /// <summary>
+    /// Determines if <paramref name="node"/> is reachable from this node.
+    /// </summary>
+    public bool IsParentOf(DigraphNode<TData, TCost> node)
+    {
+        return node.IsChildOf(this);
+    }
+
+    /// <summary>
+    /// Determines if this node is reachable from <paramref name="node"/>.
+    /// </summary>
+    public bool IsChildOf(DigraphNode<TData, TCost> node)
+    {
+        AssertAttached();
+
+        if (node == this)
+            return true;
+
+        int pathIndex = 0;
+        DigraphNode<TData, TCost>?[] path = ArrayPool<DigraphNode<TData, TCost>?>.Shared.Rent(Graph.NodeCount);
+        try
+        {
+            return IsChildOfIntl(node, path, ref pathIndex);
+        }
+        finally
+        {
+            ArrayPool<DigraphNode<TData, TCost>?>.Shared.Return(path);
+        }
+    }
+
+    private bool IsChildOfIntl(DigraphNode<TData, TCost> targetNode, DigraphNode<TData, TCost>?[] path, ref int pathIndex)
+    {
+        if (targetNode == this)
+        {
+            return true;
+        }
+
+        int index = Array.IndexOf(path, this, 0, pathIndex);
+        if (index >= 0)
+        {
+            // cycle found.
+            return false;
+        }
+
+        path[pathIndex] = this;
+        ++pathIndex;
+        foreach (DigraphEdge<TData, TCost> edge in this)
+        {
+            if (edge.IsSelfLoop)
+                continue;
+            if (edge.To.IsChildOfIntl(targetNode, path, ref pathIndex))
+                return true;
+        }
+
+        // --pathIndex;
+        // path[pathIndex] = null;
+        return false;
     }
 
     public override string ToString() => Value?.ToString() ?? string.Empty;
