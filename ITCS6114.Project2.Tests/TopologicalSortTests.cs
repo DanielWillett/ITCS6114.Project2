@@ -5,7 +5,7 @@ namespace ITCS6114.Project2.Tests;
 
 public class TopologicalSortTests
 {
-    private async Task CheckValidResult(Digraph<string, int> graph, string[] sortedValues)
+    private static void CheckValidResult(Digraph<string, int> graph, string[] sortedValues)
     {
         for (int i = 0; i < sortedValues.Length; ++i)
         {
@@ -15,16 +15,16 @@ public class TopologicalSortTests
             for (int j = 0; j < i; ++j)
             {
                 DigraphNode<string, int> prevNode = graph[sortedValues[j]];
-                if (node.IsParentOf(prevNode))
+                if (prevNode.IsParentOf(node))
                 {
-                    Assert.Fail($"{node.Value} should come after  {prevNode.Value}");
+                    Assert.Fail($"{node.Value} should come before {prevNode.Value}");
                 }
             }
         }
     }
 
     [Test]
-    public async Task Test1_Directed()
+    public void Test1_Directed()
     {
         // example from slides
         using StreamReader reader = new StreamReader("Assets/ts-1.txt");
@@ -41,11 +41,11 @@ public class TopologicalSortTests
 
         // string[] expected = [ "u", "v", "y", "x", "w", "z" ];
 
-        await CheckValidResult(graph, sorted);
+        CheckValidResult(graph, sorted);
     }
 
     [Test]
-    public async Task Test2_Directed()
+    public void Test2_Directed()
     {
         // example from handout
         using StreamReader reader = new StreamReader("Assets/ts-2.txt");
@@ -61,12 +61,12 @@ public class TopologicalSortTests
         Console.WriteLine();
 
         // string[] expected = [ "p", "n", "o", "s", "m", "r", "y", "v", "x", "w", "z", "u", "q", "t" ];
-
-        await CheckValidResult(graph, sorted);
+        
+        CheckValidResult(graph, sorted);
     }
 
     [Test]
-    public async Task Test3_Directed()
+    public void Test3_Directed()
     {
         // example from sheets
         using StreamReader reader = new StreamReader("Assets/ts-3.txt");
@@ -83,6 +83,6 @@ public class TopologicalSortTests
 
         // string[] expected = [ "socks", "undershorts", "pants", "shoes", "watch", "shirt", "belt", "tie", "jacket" ];
 
-        await CheckValidResult(graph, sorted);
+        CheckValidResult(graph, sorted);
     }
 }

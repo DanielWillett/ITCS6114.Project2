@@ -60,7 +60,7 @@ public struct TopologicalSort<TData, TCost>
 
         _sortEdgesBuffer = new DigraphEdge<TData, TCost>[maxEdgeCount];
 
-        for (int i = _states.Length - 1; i >= 0; --i)
+        for (int i = 0; i < _states.Length; ++i)
         {
             ref NodeState nodeState = ref _states[i];
             if (nodeState.State != NodeVisitState.Unvisited)
@@ -91,10 +91,10 @@ public struct TopologicalSort<TData, TCost>
             ++edgeIndex;
         }
 
-        Console.WriteLine($"{node.Value} {nodeState.StartTime} / ?");
+        Console.WriteLine($"{node.Value} {nodeState.StartTime} /");
 
         // insertion sort on all edges connected to 'node'
-        // Array.Sort(_sortEdgesBuffer, 0, edgeIndex, _digraphComparer);
+        Array.Sort(_sortEdgesBuffer, 0, edgeIndex, _digraphComparer);
 
         for (int i = 0; i < edgeIndex; ++i)
         {

@@ -401,44 +401,38 @@ public class DigraphNode<TData, TCost> : IReadOnlyCollection<DigraphEdge<TData, 
         if (node == this)
             return true;
 
-        int pathIndex = 0;
-        DigraphNode<TData, TCost>?[] path = ArrayPool<DigraphNode<TData, TCost>?>.Shared.Rent(Graph.NodeCount);
-        try
+        BitArray mask = new BitArray(Graph.NodeCount);
+        int index = 0;
+        foreach (DigraphNode<TData, TCost> n in Graph)
         {
-            return IsChildOfIntl(node, path, ref pathIndex);
+            n.UserIndex = index;
+            ++index;
         }
-        finally
-        {
-            ArrayPool<DigraphNode<TData, TCost>?>.Shared.Return(path);
-        }
+        return IsChildOfIntl(node, mask);
     }
 
-    private bool IsChildOfIntl(DigraphNode<TData, TCost> targetNode, DigraphNode<TData, TCost>?[] path, ref int pathIndex)
+    private bool IsChildOfIntl(DigraphNode<TData, TCost> targetNode, BitArray mask)
     {
         if (targetNode == this)
         {
             return true;
         }
 
-        int index = Array.IndexOf(path, this, 0, pathIndex);
-        if (index >= 0)
+        if (mask[UserIndex])
         {
             // cycle found.
             return false;
         }
 
-        path[pathIndex] = this;
-        ++pathIndex;
+        mask[UserIndex] = true;
         foreach (DigraphEdge<TData, TCost> edge in this)
         {
             if (edge.IsSelfLoop)
                 continue;
-            if (edge.To.IsChildOfIntl(targetNode, path, ref pathIndex))
+            if (edge.To.IsChildOfIntl(targetNode, mask))
                 return true;
         }
 
-        // --pathIndex;
-        // path[pathIndex] = null;
         return false;
     }
 
