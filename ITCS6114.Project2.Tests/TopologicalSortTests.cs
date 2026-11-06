@@ -26,29 +26,8 @@ public class TopologicalSortTests
     [Test]
     public void Test1_Directed()
     {
-        // example from slides
-        using StreamReader reader = new StreamReader("Assets/ts-1.txt");
-        Digraph<string, int> graph = (Digraph<string, int>)GraphFileFormat.ReadGraph<string, int>(reader, out _);
-
-        string[] sorted = TopologicalSort<string, int>.Sort(graph);
-        foreach (string str in sorted)
-        {
-            Console.Write(str);
-            Console.Write(' ');
-        }
-        
-        Console.WriteLine();
-
-        // string[] expected = [ "u", "v", "y", "x", "w", "z" ];
-
-        CheckValidResult(graph, sorted);
-    }
-
-    [Test]
-    public void Test2_Directed()
-    {
         // example from handout
-        using StreamReader reader = new StreamReader("Assets/ts-2.txt");
+        using StreamReader reader = new StreamReader("Assets/ts-1.txt");
         Digraph<string, int> graph = (Digraph<string, int>)GraphFileFormat.ReadGraph<string, int>(reader, out _);
 
         string[] sorted = TopologicalSort<string, int>.Sort(graph);
@@ -66,10 +45,10 @@ public class TopologicalSortTests
     }
 
     [Test]
-    public void Test3_Directed()
+    public void Test2_Directed()
     {
         // example from sheets
-        using StreamReader reader = new StreamReader("Assets/ts-3.txt");
+        using StreamReader reader = new StreamReader("Assets/ts-2.txt");
         Digraph<string, int> graph = (Digraph<string, int>)GraphFileFormat.ReadGraph<string, int>(reader, out _);
 
         string[] sorted = TopologicalSort<string, int>.Sort(graph);

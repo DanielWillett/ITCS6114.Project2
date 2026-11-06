@@ -1,6 +1,5 @@
 ﻿using ITCS6114.Project2.Impl.Graphs;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 
 namespace ITCS6114.Project2.Impl.Algorithms;
 
@@ -14,7 +13,8 @@ public struct TopologicalSort<TData, TCost>
 
     private NodeState[] _states;
     private TData[] _sortOutput;
-    private int _time, _sortOutputIndex;
+    // private int _time;
+    private int _sortOutputIndex;
     private DigraphEdge<TData, TCost>[] _sortEdgesBuffer;
 
     public static TData[] Sort(Digraph<TData, TCost> graph)
@@ -23,12 +23,6 @@ public struct TopologicalSort<TData, TCost>
         return runner.SortIntl(graph);
     }
     
-    public static TData[] Sort(UndirectedGraph<TData, TCost> graph)
-    {
-        TopologicalSort<TData, TCost> runner = new TopologicalSort<TData, TCost>();
-        return runner.SortIntl(graph);
-    }
-
     private TData[] SortIntl(Digraph<TData, TCost> graph)
     {
         // _time = 0;
@@ -46,8 +40,8 @@ public struct TopologicalSort<TData, TCost>
         {
             ref NodeState nodeState = ref _states[index];
 
-            nodeState.StartTime = 0;
-            nodeState.EndTime = -1;
+            // nodeState.StartTime = 0;
+            // nodeState.EndTime = -1;
             nodeState.State = NodeVisitState.Unvisited;
             nodeState.Node = node;
 
@@ -66,7 +60,7 @@ public struct TopologicalSort<TData, TCost>
             if (nodeState.State != NodeVisitState.Unvisited)
                 continue;
 
-            DigraphNode<TData, TCost> node = Unsafe.As<IGraphNode<TData>, DigraphNode<TData, TCost>>(ref nodeState.Node);
+            DigraphNode<TData, TCost> node = nodeState.Node;
             if (node.InCount > 0)
                 continue;
 
@@ -78,10 +72,10 @@ public struct TopologicalSort<TData, TCost>
 
     private void DfsVisitBigraph(DigraphNode<TData, TCost> node)
     {
-        ++_time;
+        // ++_time;
         ref NodeState nodeState = ref _states[node.UserIndex];
 
-        nodeState.StartTime = _time;
+        // nodeState.StartTime = _time;
         nodeState.State = NodeVisitState.Visiting;
 
         int edgeIndex = 0;
@@ -90,8 +84,6 @@ public struct TopologicalSort<TData, TCost>
             _sortEdgesBuffer[edgeIndex] = adjacent;
             ++edgeIndex;
         }
-
-        Console.WriteLine($"{node.Value} {nodeState.StartTime} /");
 
         // insertion sort on all edges connected to 'node'
         Array.Sort(_sortEdgesBuffer, 0, edgeIndex, _digraphComparer);
@@ -103,30 +95,21 @@ public struct TopologicalSort<TData, TCost>
             if (adjState.State != NodeVisitState.Unvisited)
                 continue;
 
-            adjState.Predecessor = node;
+            // adjState.Predecessor = node;
             DfsVisitBigraph(adjacent.To);
         }
 
         nodeState.State = NodeVisitState.Visited;
-        ++_time;
-        nodeState.EndTime = _time;
+        // ++_time;
+        // nodeState.EndTime = _time;
 
         _sortOutput[_sortOutput.Length - _sortOutputIndex - 1] = node.Value;
         ++_sortOutputIndex;
-
-        Console.WriteLine($"{node.Value} {nodeState.StartTime} / {nodeState.EndTime}");
-    }
-
-    private TData[] SortIntl(UndirectedGraph<TData, TCost> graph)
-    {
-        return null;
     }
 
     private struct NodeState
     {
-        public IGraphNode<TData> Node;
-        public IGraphNode<TData>? Predecessor;
-        public int StartTime, EndTime;
+        public DigraphNode<TData, TCost> Node;
         public NodeVisitState State;
     }
 

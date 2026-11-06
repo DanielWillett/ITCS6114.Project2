@@ -1,22 +1,19 @@
-﻿14 21 D
-m x
-m q
-m r
-n q
-n u
-n o
-p o
-p s
-p z
-w z
-v w
-s r
-o s
-o v
-o r
-r y
-r u
-u t
-v x
-y v
-q t
+﻿9 9 D
+watch
+undershorts
+pants
+belt
+shirt
+tie
+jacket
+socks
+shoes
+undershorts shoes
+socks shoes
+undershorts pants
+pants shoes
+pants belt
+shirt belt
+shirt tie
+tie jacket
+belt jacket
