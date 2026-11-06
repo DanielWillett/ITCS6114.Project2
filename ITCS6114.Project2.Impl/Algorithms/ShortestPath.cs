@@ -14,11 +14,57 @@ namespace ITCS6114.Project2.Impl.Algorithms;
 public struct ShortestPath<TData, TCost>
     where TCost : INumber<TCost>
 {
+
 #nullable disable
 
     private NodeState[] _states;
+    private PriorityQueue<int, Cost> _queue;
 
 #nullable restore
+
+    private struct Cost : IComparable<TCost>, IComparable<Cost>
+    {
+        public static Cost Infinite
+        {
+            get
+            {
+                Cost cost = default;
+                cost.IsInfinite = true;
+                return cost;
+            }
+        }
+
+        public readonly TCost CostValue;
+        public bool IsInfinite;
+
+        public Cost(TCost cost)
+        {
+            CostValue = cost;
+            IsInfinite = false;
+        }
+#nullable disable
+        public readonly int CompareTo(TCost cost)
+        {
+            return IsInfinite ? 1 : CostValue.CompareTo(cost);
+        }
+        public readonly int CompareTo(Cost other)
+        {
+            if (IsInfinite)
+            {
+                if (other.IsInfinite)
+                    return 0;
+
+                return 1;
+            }
+            if (other.IsInfinite)
+            {
+                return -1;
+            }
+
+            return CostValue.CompareTo(other.CostValue);
+        }
+#nullable restore
+    }
 
     /// <summary>
     /// Gets the shortest path from one node to all other nodes on a directed graph.
@@ -72,30 +118,35 @@ public struct ShortestPath<TData, TCost>
     {
         _states = new NodeState[graph.NodeCount];
 
+        _queue = new PriorityQueue<int, Cost>(graph.NodeCount * 2);
+
         using (Digraph<TData, TCost>.GraphEnumerator enumerator = graph.GetEnumerator())
         {
+            Cost defaultCost = Cost.Infinite;
             for (int i = 0; i < _states.Length && enumerator.MoveNext(); ++i)
             {
                 DigraphNode<TData, TCost> node = enumerator.Current;
 
                 ref NodeState state = ref _states[i];
                 state.Node = node;
-                state.Distance = TCost.Zero;
+                state.Distance = state.Node != sourceNode ? defaultCost : new Cost(TCost.Zero);
                 state.Previous = -1;
-                state.IsInfinite = state.Node != sourceNode;
 
                 node.UserIndex = i;
+                _queue.Enqueue(i, state.Distance);
             }
         }
 
-        for (int i = 0; i < _states.Length; ++i)
+        while (_queue.Count > 0)
         {
-            int min = GetMinDistance();
-            if (min < 0)
-                break;
+            int index = _queue.Dequeue();
+            ref NodeState fromState = ref _states[index];
+            if (fromState.IsFinalized)
+                continue;
 
-            ref NodeState fromState = ref _states[min];
-            DigraphNode<TData, TCost> node = Unsafe.As<IGraphNode<TData>, DigraphNode<TData, TCost>>(ref fromState.Node);
+            DigraphNode<TData, TCost> node = Unsafe.As<IGraphNode<TData>, DigraphNode<TData, TCost>>(
+                ref fromState.Node
+            );
 
             foreach (DigraphEdge<TData, TCost> edge in node)
             {
@@ -148,29 +199,32 @@ public struct ShortestPath<TData, TCost>
     {
         _states = new NodeState[graph.NodeCount];
 
+        _queue = new PriorityQueue<int, Cost>(graph.NodeCount * 2);
+
         using (UndirectedGraph<TData, TCost>.GraphEnumerator enumerator = graph.GetEnumerator())
         {
+            Cost defaultCost = Cost.Infinite;
             for (int i = 0; i < _states.Length && enumerator.MoveNext(); ++i)
             {
                 UndirectedGraphNode<TData, TCost> node = enumerator.Current;
 
                 ref NodeState state = ref _states[i];
                 state.Node = node;
-                state.Distance = TCost.Zero;
+                state.Distance = state.Node != sourceNode ? defaultCost : new Cost(TCost.Zero);
                 state.Previous = -1;
-                state.IsInfinite = state.Node != sourceNode;
 
                 node.UserIndex = i;
+                _queue.Enqueue(i, state.Distance);
             }
         }
 
-        for (int i = 0; i < _states.Length; ++i)
+        while (_queue.Count > 0)
         {
-            int min = GetMinDistance();
-            if (min < 0)
-                break;
+            int index = _queue.Dequeue();
+            ref NodeState fromState = ref _states[index];
+            if (fromState.IsFinalized)
+                continue;
 
-            ref NodeState fromState = ref _states[min];
             UndirectedGraphNode<TData, TCost> node = Unsafe.As<IGraphNode<TData>, UndirectedGraphNode<TData, TCost>>(ref fromState.Node);
 
             foreach (UndirectedGraphEdge<TData, TCost> edge in node)
@@ -217,30 +271,6 @@ public struct ShortestPath<TData, TCost>
         return results;
     }
 
-    private int GetMinDistance()
-    {
-        TCost? min = default;
-        int minIndex = -1;
-        for (int i = 0; i < _states.Length; ++i)
-        {
-            ref NodeState state = ref _states[i];
-            if (state.IsInfinite || state.IsFinalized)
-                continue;
-            if (minIndex < 0)
-            {
-                minIndex = i;
-                min = state.Distance;
-            }
-            else if (min! > state.Distance)
-            {
-                min = state.Distance;
-                minIndex = i;
-            }
-        }
-
-        return minIndex;
-    }
-
     private void Relax(int from, int to, IGraphEdge<TCost> edge)
     {
         ref NodeState fromState = ref _states[from];
@@ -248,15 +278,15 @@ public struct ShortestPath<TData, TCost>
         if (toState.IsFinalized)
             return;
 
-        TCost newCost = fromState.Distance + edge.Cost;
-        if (!toState.IsInfinite && toState.Distance <= newCost)
+        TCost newCost = fromState.Distance.CostValue + edge.Cost;
+        if (toState.Distance.CompareTo(newCost) <= 0)
             return;
 
-        toState.Distance = newCost;
-        toState.IsInfinite = false;
+        toState.Distance = new Cost(newCost);
         toState.Previous = from;
         toState.MaxCount = fromState.MaxCount + 1;
         toState.PreviousEdge = edge;
+        _queue.Enqueue(to, toState.Distance);
     }
 
     private (ImmutableArray<TEdge> edges, TCost totalCost) TracePath<TEdge>(int i)
@@ -285,11 +315,10 @@ public struct ShortestPath<TData, TCost>
     private struct NodeState
     {
         public IGraphNode<TData> Node;
-        public TCost Distance;
+        public Cost Distance;
         public int Previous;
         public IGraphEdge<TCost>? PreviousEdge;
         public int MaxCount;
-        public bool IsInfinite;
         public bool IsFinalized;
     }
 }

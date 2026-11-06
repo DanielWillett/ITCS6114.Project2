@@ -18,7 +18,10 @@ public class ShortestPathTests
 
         await Assert.That(results.Paths).IsEmpty();
         await Assert.That(results.DestinationNodePath).IsNotNull();
-        await Assert.That(results.DestinationNodePath!.ToString()).Contains("= A -> C -> D -> F }");
+        await Assert.That(results.DestinationNodePath!.ToString())
+            .Contains("= A -> C -> D -> F }")
+            .Or
+            .Contains("= A -> B -> E -> F }");
         await Assert.That(results.DestinationNodePath!.TotalCost).IsEqualTo(6);
 
         Console.WriteLine(results.DestinationNodePath);
@@ -45,7 +48,10 @@ public class ShortestPathTests
         await Assert.That(results.Paths[graph["C"]].ToString()).IsEqualTo("{ Cost = 2, Edges = A -> C }");
         await Assert.That(results.Paths[graph["D"]].ToString()).IsEqualTo("{ Cost = 3, Edges = A -> C -> D }");
         await Assert.That(results.Paths[graph["E"]].ToString()).IsEqualTo("{ Cost = 3, Edges = A -> B -> E }");
-        await Assert.That(results.Paths[graph["F"]].ToString()).IsEqualTo("{ Cost = 6, Edges = A -> C -> D -> F }");
+        await Assert.That(results.Paths[graph["F"]].ToString())
+            .IsEqualTo("{ Cost = 6, Edges = A -> C -> D -> F }")
+            .Or
+            .IsEqualTo("{ Cost = 6, Edges = A -> B -> E -> F }");
     }
 
     [Test]
@@ -79,7 +85,10 @@ public class ShortestPathTests
 
         await Assert.That(results.Paths).IsEmpty();
         await Assert.That(results.DestinationNodePath).IsNotNull();
-        await Assert.That(results.DestinationNodePath!.ToString()).Contains("= A -> B -> C -> D -> F }");
+        await Assert.That(results.DestinationNodePath!.ToString())
+            .Contains("= A -> B -> C -> D -> F }")
+            .Or
+            .Contains("= A -> B -> E -> F }");
         await Assert.That(results.DestinationNodePath!.TotalCost).IsEqualTo(6);
 
         Console.WriteLine(results.DestinationNodePath);
@@ -106,7 +115,10 @@ public class ShortestPathTests
         await Assert.That(results.Paths[graph["C"]].ToString()).IsEqualTo("{ Cost = 2, Edges = A -> B -> C }");
         await Assert.That(results.Paths[graph["D"]].ToString()).IsEqualTo("{ Cost = 3, Edges = A -> B -> C -> D }");
         await Assert.That(results.Paths[graph["E"]].ToString()).IsEqualTo("{ Cost = 3, Edges = A -> B -> E }");
-        await Assert.That(results.Paths[graph["F"]].ToString()).IsEqualTo("{ Cost = 6, Edges = A -> B -> C -> D -> F }");
+        await Assert.That(results.Paths[graph["F"]].ToString())
+            .IsEqualTo("{ Cost = 6, Edges = A -> B -> C -> D -> F }")
+            .Or
+            .IsEqualTo("{ Cost = 6, Edges = A -> B -> E -> F }");
     }
 
     [Test]

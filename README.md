@@ -5,4 +5,11 @@
 
 ### Psuedocode
 
-[Actual Code]()
+[Implementation](https://github.com/DanielWillett/ITCS6114.Project2/blob/main/ITCS6114.Project2.Impl/Algorithms/ShortestPath.cs#L67)
+
+```
+foreach vertex v in graph
+    v.d = inf
+    v.p = nil
+
+```
