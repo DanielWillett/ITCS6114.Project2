@@ -20,6 +20,9 @@ Both node classes have a `UserIndex` field that is used to keep track of extra i
 
 No AI was used for this assignment.
 
+## Running Instructions
+Install the [.NET SDK](https://dotnet.microsoft.com/en-us/download) if you don't already have it. Install .NET 10 SDK or higher
+
 ## Unit Testing
 All algorithms and the graph classes have a few [unit tests](https://github.com/DanielWillett/ITCS6114.Project2/tree/main/ITCS6114.Project2.Tests).
 
