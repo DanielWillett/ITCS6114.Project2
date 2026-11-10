@@ -39,7 +39,7 @@ public struct MinimumSpanningTree<TData, TCost>
         _sets = new SetState[original.NodeCount];
 
         // random sentinal number for UserIndex
-        const int indexValue = 1431821410;
+        const int indexValue = -1431821410;
 
         foreach (UndirectedGraphNode<TData, TCost> node in original)
         {

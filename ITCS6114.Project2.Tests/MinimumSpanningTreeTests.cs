@@ -15,14 +15,26 @@ public class MinimumSpanningTreeTests
 
         UndirectedGraph<int, int> mst = MinimumSpanningTree<int, int>.Get(graph, out int totalCost);
 
+        GraphFileFormat.WriteGraph(mst, Console.Out);
+        Console.WriteLine();
+
         await Assert.That(mst.NodeCount).IsEqualTo(mst.NodeCount);
         await Assert.That(mst.EdgeCount).IsEqualTo(mst.NodeCount - 1);
 
         await Assert.That(mst.FindPath(mst[0], mst[1])).IsNotNull();
         await Assert.That(mst.FindPath(mst[0], mst[1])!.Cost).IsEqualTo(4);
 
-        await Assert.That(mst.FindPath(mst[1], mst[2])).IsNotNull();
-        await Assert.That(mst.FindPath(mst[1], mst[2])!.Cost).IsEqualTo(8);
+        // two solutions are valid
+        try
+        {
+            await Assert.That(mst.FindPath(mst[1], mst[2])).IsNotNull();
+            await Assert.That(mst.FindPath(mst[1], mst[2])!.Cost).IsEqualTo(8);
+        }
+        catch
+        {
+            await Assert.That(mst.FindPath(mst[0], mst[7])).IsNotNull();
+            await Assert.That(mst.FindPath(mst[0], mst[7])!.Cost).IsEqualTo(8);
+        }
 
         await Assert.That(mst.FindPath(mst[6], mst[7])).IsNotNull();
         await Assert.That(mst.FindPath(mst[6], mst[7])!.Cost).IsEqualTo(1);

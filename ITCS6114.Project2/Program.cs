@@ -1,4 +1,5 @@
-﻿using ITCS6114.Project2.Impl.Algorithms;
+﻿using System.Collections.Immutable;
+using ITCS6114.Project2.Impl.Algorithms;
 using ITCS6114.Project2.Impl.Graphs;
 using System.CommandLine;
 
@@ -173,12 +174,36 @@ topologicalSortCmd.SetAction(result =>
         );
     }
 
-    string[] sortResults = TopologicalSort<string, double>.Sort(digraph);
-    Console.Write("Sorted:");
-    for (int i = 0; i < sortResults.Length; ++i)
+    TopologicalSort<string, double>.Result res = TopologicalSort<string, double>.Sort(digraph);
+
+    if (res.ContainsCycles)
     {
-        Console.Write(' ');
-        Console.Write(sortResults[i]);
+        Console.WriteLine("Cycle(s) Detected:");
+        foreach (TopologicalSort<string, double>.Cycle cycle in res.Cycles)
+        {
+            bool first = true;
+            Console.Write(" * ");
+            foreach (DigraphNode<string, double> node in cycle.Nodes)
+            {
+                if (first)
+                    first = false;
+                else
+                    Console.Write(" -> ");
+
+                Console.Write(node.Value);
+            }
+
+            Console.WriteLine();
+        }
+    }
+    else
+    {
+        Console.Write("Sorted:");
+        for (int i = 0; i < res.Sorted.Length; ++i)
+        {
+            Console.Write(' ');
+            Console.Write(res.Sorted[i]);
+        }
     }
 
     Console.WriteLine();

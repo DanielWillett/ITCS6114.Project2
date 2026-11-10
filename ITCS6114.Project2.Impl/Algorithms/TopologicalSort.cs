@@ -1,4 +1,6 @@
 ﻿using ITCS6114.Project2.Impl.Graphs;
+using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 
 namespace ITCS6114.Project2.Impl.Algorithms;
@@ -12,22 +14,24 @@ public struct TopologicalSort<TData, TCost>
     private static IComparer<DigraphEdge<TData, TCost>>? _digraphComparer;
 
     private NodeState[] _states;
-    private TData[] _sortOutput;
+    private DigraphNode<TData, TCost>[] _sortOutput;
     // private int _time;
     private int _sortOutputIndex;
-    private DigraphEdge<TData, TCost>[] _sortEdgesBuffer;
+    private ImmutableArray<Cycle>.Builder? _cycles;
+    private ImmutableArray<DigraphNode<TData, TCost>>.Builder? _cycleBuilder;
 
-    public static TData[] Sort(Digraph<TData, TCost> graph)
+    public static Result Sort(Digraph<TData, TCost> graph)
     {
         TopologicalSort<TData, TCost> runner = new TopologicalSort<TData, TCost>();
+
         return runner.SortIntl(graph);
     }
     
-    private TData[] SortIntl(Digraph<TData, TCost> graph)
+    private Result SortIntl(Digraph<TData, TCost> graph)
     {
         // _time = 0;
         _states = new NodeState[graph.NodeCount];
-        _sortOutput = new TData[graph.NodeCount];
+        _sortOutput = new DigraphNode<TData, TCost>[graph.NodeCount];
 
         _digraphComparer ??= Comparer<DigraphEdge<TData, TCost>>.Create(
             (x, y) => Comparer<TData>.Default.Compare(x.To.Value, y.To.Value)
@@ -52,7 +56,7 @@ public struct TopologicalSort<TData, TCost>
             ++index;
         }
 
-        _sortEdgesBuffer = new DigraphEdge<TData, TCost>[maxEdgeCount];
+        bool anyStartingNodes = false;
 
         for (int i = 0; i < _states.Length; ++i)
         {
@@ -64,10 +68,47 @@ public struct TopologicalSort<TData, TCost>
             if (node.InCount > 0)
                 continue;
 
+            anyStartingNodes = true;
             DfsVisitBigraph(node);
         }
 
-        return _sortOutput;
+        if (!anyStartingNodes)
+        {
+            // handles a situation where the entire graph is a cycle (theres no nodes without incoming connections)
+            switch (_states.Length)
+            {
+                case 1:
+                    if (_states[0].Node.InCount > 0)
+                    {
+                        return new Result(ImmutableArray.Create(new Cycle(ImmutableArray.Create(_states[0].Node))));
+                    }
+
+                    _sortOutput[0] = _states[0].Node;
+                    break;
+
+                case 0:
+                    break;
+
+                default:
+                    for (int i = 0; i < _states.Length; ++i)
+                    {
+                        ref NodeState nodeState = ref _states[i];
+                        if (nodeState.State != NodeVisitState.Unvisited)
+                            continue;
+
+                        DigraphNode<TData, TCost> node = nodeState.Node;
+                        if (node.InCount > 0 && anyStartingNodes)
+                            continue;
+
+                        anyStartingNodes = true;
+                        DfsVisitBigraph(node);
+                    }
+
+                    break;
+            }
+        }
+
+        return _cycles != null ? new Result(_cycles.DrainToImmutable()) : new Result(_sortOutput);
     }
 
     private void DfsVisitBigraph(DigraphNode<TData, TCost> node)
@@ -78,38 +119,64 @@ public struct TopologicalSort<TData, TCost>
         // nodeState.StartTime = _time;
         nodeState.State = NodeVisitState.Visiting;
 
-        int edgeIndex = 0;
         foreach (DigraphEdge<TData, TCost> adjacent in node)
         {
-            _sortEdgesBuffer[edgeIndex] = adjacent;
-            ++edgeIndex;
-        }
-
-        // insertion sort on all edges connected to 'node'
-        Array.Sort(_sortEdgesBuffer, 0, edgeIndex, _digraphComparer);
-
-        for (int i = 0; i < edgeIndex; ++i)
-        {
-            DigraphEdge<TData, TCost> adjacent = _sortEdgesBuffer[i];
-            ref NodeState adjState = ref _states[adjacent.To.UserIndex];
-            if (adjState.State != NodeVisitState.Unvisited)
+            if (adjacent.IsSelfLoop)
+            {
+                _cycles ??= ImmutableArray.CreateBuilder<Cycle>();
+                _cycles.Add(new Cycle([ adjacent.From ]));
                 continue;
+            }
 
-            // adjState.Predecessor = node;
-            DfsVisitBigraph(adjacent.To);
+            ref NodeState adjState = ref _states[adjacent.To.UserIndex];
+
+            switch (adjState.State)
+            {
+                // tree edge
+                case NodeVisitState.Unvisited:
+                    adjState.Predecessor = node;
+                    DfsVisitBigraph(adjacent.To);
+                    break;
+
+                // back edge
+                case NodeVisitState.Visiting:
+                    ResolveCycle(node, adjacent);
+                    break;
+            }
         }
 
         nodeState.State = NodeVisitState.Visited;
         // ++_time;
         // nodeState.EndTime = _time;
 
-        _sortOutput[_sortOutput.Length - _sortOutputIndex - 1] = node.Value;
+        _sortOutput[_sortOutput.Length - _sortOutputIndex - 1] = node;
         ++_sortOutputIndex;
+    }
+
+    private void ResolveCycle(DigraphNode<TData, TCost> visitedNode, DigraphEdge<TData, TCost> backEdge)
+    {
+        _cycleBuilder ??= ImmutableArray.CreateBuilder<DigraphNode<TData, TCost>>();
+
+        DigraphNode<TData, TCost> predecessor = visitedNode;
+
+        do
+        {
+            _cycleBuilder.Add(predecessor);
+            predecessor = _states[predecessor.UserIndex].Predecessor;
+        } while (predecessor != backEdge.To);
+
+        _cycleBuilder.Add(predecessor);
+
+        _cycleBuilder.Reverse();
+
+        _cycles ??= ImmutableArray.CreateBuilder<Cycle>();
+        _cycles.Add(new Cycle(_cycleBuilder.DrainToImmutable()));
     }
 
     private struct NodeState
     {
         public DigraphNode<TData, TCost> Node;
+        public DigraphNode<TData, TCost> Predecessor;
         public NodeVisitState State;
     }
 
@@ -118,5 +185,36 @@ public struct TopologicalSort<TData, TCost>
         Unvisited,
         Visiting,
         Visited
+    }
+
+    public readonly struct Result
+    {
+        public readonly DigraphNode<TData, TCost>[]? Sorted;
+        public readonly ImmutableArray<Cycle> Cycles;
+
+        [MemberNotNullWhen(false, nameof(Sorted))]
+        public bool ContainsCycles => Sorted == null;
+
+        public Result(DigraphNode<TData, TCost>[]? sorted)
+        {
+            Sorted = sorted;
+            Cycles = ImmutableArray<Cycle>.Empty;
+        }
+
+        public Result(ImmutableArray<Cycle> cycles)
+        {
+            Sorted = null;
+            Cycles = cycles;
+        }
+    }
+
+    public readonly struct Cycle
+    {
+        public readonly ImmutableArray<DigraphNode<TData, TCost>> Nodes;
+
+        public Cycle(ImmutableArray<DigraphNode<TData, TCost>> nodes)
+        {
+            Nodes = nodes;
+        }
     }
 }

@@ -141,7 +141,7 @@ public struct ShortestPath<TData, TCost>
         {
             int index = _queue.Dequeue();
             ref NodeState fromState = ref _states[index];
-            if (fromState.IsFinalized)
+            if (fromState.IsFinalized || fromState.Distance.IsInfinite)
                 continue;
 
             DigraphNode<TData, TCost> node = Unsafe.As<IGraphNode<TData>, DigraphNode<TData, TCost>>(
@@ -166,6 +166,10 @@ public struct ShortestPath<TData, TCost>
             for (int i = 0; i < _states.Length; ++i)
             {
                 ref NodeState rootState = ref _states[i];
+
+                if (rootState.Distance.IsInfinite)
+                    continue;
+
                 DigraphNode<TData, TCost> node = Unsafe.As<IGraphNode<TData>, DigraphNode<TData, TCost>>(ref rootState.Node);
 
                 (ImmutableArray<DigraphEdge<TData, TCost>> edges, TCost totalCost)
@@ -178,13 +182,23 @@ public struct ShortestPath<TData, TCost>
         }
         else
         {
-            (ImmutableArray<DigraphEdge<TData, TCost>> edges, TCost totalCost)
-                = TracePath<DigraphEdge<TData, TCost>>(destinationNode.UserIndex);
+            ShortestDigraphPathResult<TData, TCost>? result;
+            if (_states[destinationNode.UserIndex].Distance.IsInfinite)
+            {
+                result = null;
+            }
+            else
+            {
+                (ImmutableArray<DigraphEdge<TData, TCost>> edges, TCost totalCost)
+                    = TracePath<DigraphEdge<TData, TCost>>(destinationNode.UserIndex);
+
+                result = new ShortestDigraphPathResult<TData, TCost>(edges, totalCost, destinationNode);
+            }
 
             results = new ShortestDigraphPathResults<TData, TCost>(
                 sourceNode,
                 ImmutableDictionary<DigraphNode<TData, TCost>, ShortestPathResult<DigraphNode<TData, TCost>, DigraphEdge<TData, TCost>, TCost>>.Empty,
-                new ShortestDigraphPathResult<TData, TCost>(edges, totalCost, destinationNode)
+                result
             );
         }
 
@@ -214,7 +228,10 @@ public struct ShortestPath<TData, TCost>
                 state.Previous = -1;
 
                 node.UserIndex = i;
-                _queue.Enqueue(i, state.Distance);
+                if (state.Node == sourceNode)
+                {
+                    _queue.Enqueue(i, state.Distance);
+                }
             }
         }
 
@@ -258,13 +275,24 @@ public struct ShortestPath<TData, TCost>
         }
         else
         {
-            (ImmutableArray<UndirectedGraphEdge<TData, TCost>> edges, TCost totalCost)
-                = TracePath<UndirectedGraphEdge<TData, TCost>>(destinationNode.UserIndex);
+            ShortestUndirectedGraphPathResult<TData, TCost>? result;
+            if (_states[destinationNode.UserIndex].Distance.IsInfinite)
+            {
+                result = null;
+            }
+            else
+            {
+                (ImmutableArray<UndirectedGraphEdge<TData, TCost>> edges, TCost totalCost)
+                    = TracePath<UndirectedGraphEdge<TData, TCost>>(destinationNode.UserIndex);
+
+                result = new ShortestUndirectedGraphPathResult<TData, TCost>(edges, totalCost, destinationNode);
+            }
+
 
             results = new ShortestUndirectedGraphPathResults<TData, TCost>(
                 sourceNode,
                 ImmutableDictionary<UndirectedGraphNode<TData, TCost>, ShortestPathResult<UndirectedGraphNode<TData, TCost>, UndirectedGraphEdge<TData, TCost>, TCost>>.Empty,
-                new ShortestUndirectedGraphPathResult<TData, TCost>(edges, totalCost, destinationNode)
+                result
             );
         }
 

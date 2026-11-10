@@ -37,9 +37,9 @@ public class ShortestPathTests
 
         ShortestUndirectedGraphPathResults<string, int> results = ShortestPath<string, int>.Get(src);
 
-        foreach (UndirectedGraphNode<string, int> node in graph)
+        foreach (var kvp in results.Paths)
         {
-            Console.WriteLine(node.Value + ": " + results.Paths[node]);
+            Console.WriteLine(kvp.Key.Value + ": " + kvp.Value);
         }
 
         await Assert.That(results.Paths.Count).IsEqualTo(6);
@@ -62,9 +62,9 @@ public class ShortestPathTests
 
         ShortestUndirectedGraphPathResults<string, int> results = ShortestPath<string, int>.Get(src);
 
-        foreach (UndirectedGraphNode<string, int> node in graph)
+        foreach (var kvp in results.Paths)
         {
-            Console.WriteLine(node.Value + ": " + results.Paths[node]);
+            Console.WriteLine(kvp.Key.Value + ": " + kvp.Value);
         }
 
         await Assert.That(results.Paths.Count).IsEqualTo(1);
@@ -104,9 +104,9 @@ public class ShortestPathTests
 
         ShortestDigraphPathResults<string, int> results = ShortestPath<string, int>.Get(src);
 
-        foreach (DigraphNode<string, int> node in graph)
+        foreach (var kvp in results.Paths)
         {
-            Console.WriteLine(node.Value + ": " + results.Paths[node]);
+            Console.WriteLine(kvp.Key.Value + ": " + kvp.Value);
         }
 
         await Assert.That(results.Paths.Count).IsEqualTo(6);
@@ -129,12 +129,32 @@ public class ShortestPathTests
 
         ShortestDigraphPathResults<string, int> results = ShortestPath<string, int>.Get(src);
 
-        foreach (DigraphNode<string, int> node in graph)
+        foreach (var kvp in results.Paths)
         {
-            Console.WriteLine(node.Value + ": " + results.Paths[node]);
+            Console.WriteLine(kvp.Key.Value + ": " + kvp.Value);
         }
 
         await Assert.That(results.Paths.Count).IsEqualTo(1);
         await Assert.That(results.Paths[graph["A"]].ToString()).IsEqualTo("{ Cost = 0, Edges = A }");
+    }
+
+    [Test]
+    public async Task UnreachableNode()
+    {
+        using StreamReader reader = new StreamReader("Assets/sp-3.txt");
+        Digraph<string, int> graph = (Digraph<string, int>)GraphFileFormat.ReadGraph<string, int>(reader, out string? sourceNode);
+
+        DigraphNode<string, int> src = graph["4"];
+
+        ShortestDigraphPathResults<string, int> results = ShortestPath<string, int>.Get(src);
+
+        foreach (var kvp in results.Paths)
+        {
+            Console.WriteLine(kvp.Key.Value + ": " + kvp.Value);
+        }
+
+        // unreachable in this graph
+        await Assert.That(results.Paths.Keys).DoesNotContain(graph["5"]);
+        await Assert.That(results.Paths.Keys).DoesNotContain(graph["9"]);
     }
 }
